@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_blank">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+	
+  <title>
+    Suomen kunta- ja maakuntarajat /
+    Finska kommun- och landskapsgränser /
+    Finnish municipal and provincial borders
+  </title>
+	
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin="">
+  </script>
+
+  <style>
+    h1, p { text-align:center; }
+    .block { display: block; }
+    .bottom {
+      clear: both;
+      padding: 10px;
+      max-width: 80%;
+      transform: translateX(10%)
+    }
+    .leaflet-tile { filter: grayscale(100%); }
+    .leaflet-container {
+      height: 600px;
+      max-height: 600px;
+      max-width: 420px;
+      width: 420px;
+    }
+    .left { float: left; }
+    .map { margin: auto; }
+    .parent { min-width: 49%; }
+    .right { float: right; }
+    .top {
+      clear: both;
+      max-width: 80%;
+      transform: translateX(10%)
+    }
+  </style>
+</head>
+<body>
+
+<div class="top">
+  <h1>
+    <span class="block">Suomen kunta- ja maakuntarajat</span>
+    <span class="block">Finska kommun- och landskapsgränser</span>
+    <span class="block">Finnish municipal and provincial borders</span>
+  </h1>
+</div>
+<div class="left parent">
+  <div class="right">
+    <div class="map" id="kuntarajat"></div>
+  </div>
+</div>
+<div class="right parent">
+  <div class="left">
+    <div class="map" id="maakuntarajat"></div>
+  </div>
+</div>
+<div class="bottom">
+  <p>
+    <a href="https://github.com/samilaine/hallinnollisetrajat">GeoJSON data</a>
+    used on this page is provided in September 2024 by
+    <a href="https://www.maanmittauslaitos.fi/en/maps-and-spatial-data/professionals/product-descriptions/division-administrative-areas-vector">the National Land Survey of Finland</a>.
+  </p>
+</div>
+
+<script>
+  const communesMap = L.map('kuntarajat').setView([65.3, 25], 5);
+  const provincesMap = L.map('maakuntarajat').setView([65.3, 25], 5);
+  const communesLayer = L.geoJSON(null, { onEachFeature: onEachFeature })
+                         .addTo(communesMap);
+  const provincesLayer = L.geoJSON(null, { onEachFeature: onEachFeature })
+                          .addTo(provincesMap);
+
+  function onEachFeature(feature, layer) {
+    if (feature.properties) {
+      let p = '';
+
+      if (feature.properties.NAMEFIN)
+        p = feature.properties.NAMEFIN;
+
+      if (feature.properties.NAMESWE)
+        p += ' / ' + feature.properties.NAMESWE;
+
+      layer.bindTooltip(p);
+    }
+  }
+
+  [ [ 'kuntarajat.json', communesLayer, communesMap ],
+    [ 'maakuntarajat.json', provincesLayer, provincesMap ] ].forEach(x => {
+    fetch(x[0])
+      .then(r => {
+        if (r.ok) return r.json();
+        throw new Error(r.url + ' ' + r.status + ' ' + r.statusText);
+      })
+      .then(j => {
+        x[1].addData(j);
+        x[1].eachLayer(l => { l.setStyle({ weight: 1 }) })
+        L.tileLayer(
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; ' +
+                         '<a href="' +
+                         'http://www.openstreetmap.org/copyright">' +
+                         'OpenStreetMap</a>'
+          }
+        ).addTo(x[2]);
+      })
+      .catch(e => { console.log(e); });
+  });
+
+</script>
+</body>
+</html>
