@@ -67,6 +67,11 @@ while True:
     print('\n\n')
     sys.exit(4)
 
+  if 'status' in j and j['status'].lower() == 'failed':
+    msg = j.get('message', None)
+    print(f'Error: "{msg}"', file = sys.stderr)
+    break
+
   if 'status' in j and j['status'].lower() == 'successful':
     if 'links' in j and len(j['links']) > 0:
       for l in j['links']:
